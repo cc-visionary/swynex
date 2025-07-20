@@ -27,11 +27,23 @@ class _FilterPanelContent extends StatefulWidget {
 
 class _FilterPanelContentState extends State<_FilterPanelContent> {
   // Temporary state for the panel
-  Set<String> _tempBuildingIds = {};
-  Set<String> _tempRoomIds = {};
-  Set<String> _tempPenIds = {};
-  Set<String> _tempGenders = {};
-  Set<String> _tempBreeds = {};
+  late Set<String> _tempBuildingIds;
+  late Set<String> _tempRoomIds;
+  late Set<String> _tempPenIds;
+  late Set<String> _tempGenders;
+  late Set<String> _tempBreeds;
+
+  @override
+  void initState() {
+    super.initState();
+    final viewModel = context.read<PigsViewModel>();
+    final filters = viewModel.appliedFilters;
+    _tempBuildingIds = Set.from(filters['buildingIds']!);
+    _tempRoomIds = Set.from(filters['roomIds']!);
+    _tempPenIds = Set.from(filters['penIds']!);
+    _tempGenders = Set.from(filters['genders']!);
+    _tempBreeds = Set.from(filters['breeds']!);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +98,13 @@ class _FilterPanelContentState extends State<_FilterPanelContent> {
               children: [
                 TextButton(
                   onPressed: () {
+                    setState(() {
+                      _tempBuildingIds.clear();
+                      _tempRoomIds.clear();
+                      _tempPenIds.clear();
+                      _tempGenders.clear();
+                      _tempBreeds.clear();
+                    });
                     viewModel.clearFilters();
                     Navigator.of(context).pop();
                   },

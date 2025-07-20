@@ -184,6 +184,11 @@ class FirestoreService {
         );
   }
 
+  Future<Pig?> getPig(String pigId) async {
+    final doc = await _db.collection('pigs').doc(pigId).get();
+    return doc.exists ? Pig.fromSnapshot(doc) : null;
+  }
+
   Future<void> addPigsAndCreateBatch({
     required PigBatch batchData,
     required List<Pig> pigsInBatch,

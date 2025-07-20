@@ -117,6 +117,14 @@ class PigsViewModel with ChangeNotifier {
   Set<String> get selectedPigIds => _selectedPigIds;
   PigViewMode get viewMode => _viewMode;
 
+  Map<String, Set<String>> get appliedFilters => {
+        'buildingIds': _selectedBuildingIds,
+        'roomIds': _selectedRoomIds,
+        'penIds': _selectedPenIds,
+        'genders': _selectedGenders,
+        'breeds': _selectedBreeds,
+      };
+
   // --- 4. Constructor: Initialize the data flow ---
   PigsViewModel(String farmId) {
     _firestoreService.getPigsStream(farmId).pipe(_pigsSubject);
@@ -159,8 +167,11 @@ class PigsViewModel with ChangeNotifier {
   }
 
   void clearFilters() {
+    _selectedBuildingIds = {};
+    _selectedRoomIds = {};
     _selectedPenIds = {};
     _selectedGenders = {};
+    _selectedBreeds = {};
     clearSelection();
     notifyListeners();
   }
