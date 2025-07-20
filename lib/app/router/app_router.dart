@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pig_lifecycle_crm/features/dashboard/presentation/screens/dashboard_screen.dart';
+import 'package:pig_lifecycle_crm/features/menu/presentation/screens/menu_screens.dart';
+import 'package:pig_lifecycle_crm/features/operations/presentation/screens/inventory_screen.dart';
+import 'package:pig_lifecycle_crm/features/reports/presentation/cost_record_screen.dart';
+import 'package:pig_lifecycle_crm/features/reports/presentation/sales_record_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:pig_lifecycle_crm/app/widgets/scaffold_with_nav_bar.dart';
-import 'package:pig_lifecycle_crm/features/auth/providers/auth_provider.dart';
+import 'package:pig_lifecycle_crm/features/auth/presentation/providers/auth_provider.dart';
 
 // --- Import all your screen files here ---
 // You will need to create these files as simple placeholders for now
-import 'package:pig_lifecycle_crm/features/dashboard/screens/my_tasks_screen.dart';
-import 'package:pig_lifecycle_crm/features/dashboard/screens/task_board_screen.dart';
-import 'package:pig_lifecycle_crm/features/operations/screens/farm_map_screen.dart';
-import 'package:pig_lifecycle_crm/features/operations/screens/scan_screen.dart';
-import 'package:pig_lifecycle_crm/features/operations/screens/reports_screen.dart';
-import 'package:pig_lifecycle_crm/features/lifecycle_crm/screens/pigs_list_screen.dart';
-import 'package:pig_lifecycle_crm/features/lifecycle_crm/screens/pig_profile_screen.dart';
-import 'package:pig_lifecycle_crm/features/settings/screens/settings_screen.dart';
-import 'package:pig_lifecycle_crm/features/settings/screens/farm_management_screen.dart';
-import 'package:pig_lifecycle_crm/features/settings/screens/user_management_screen.dart';
+import 'package:pig_lifecycle_crm/features/tasks/presentation/screens/my_tasks_screen.dart';
+import 'package:pig_lifecycle_crm/features/tasks/presentation/screens/task_board_screen.dart';
+import 'package:pig_lifecycle_crm/features/operations/presentation/screens/farm_map_screen.dart';
+import 'package:pig_lifecycle_crm/features/operations/presentation/screens/scan_screen.dart';
+import 'package:pig_lifecycle_crm/features/pigs/presentation/screens/pigs_list_screen.dart';
+import 'package:pig_lifecycle_crm/features/pigs/presentation/screens/pig_detail_screen.dart';
+import 'package:pig_lifecycle_crm/features/settings/presentation/screens/farm_management_screen.dart';
+import 'package:pig_lifecycle_crm/features/settings/presentation/screens/user_management_screen.dart';
 import 'package:pig_lifecycle_crm/features/notifications/notifications_screen.dart';
-import 'package:pig_lifecycle_crm/features/auth/screens/login_screen.dart';
+import 'package:pig_lifecycle_crm/features/auth/presentation/screens/login_screen.dart';
 
 GoRouter createRouter(AuthProvider authProvider) {
   // Define navigator keys
@@ -29,30 +32,45 @@ GoRouter createRouter(AuthProvider authProvider) {
     refreshListenable: authProvider,
 
     // The initial route the app will start on
-    initialLocation: '/my-tasks',
+    initialLocation: '/',
 
     routes: [
       // Top-level route for settings, does not have the bottom nav bar
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
-        path: '/settings',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const SettingsScreen(),
-        routes: [
-          GoRoute(
-            path: 'users', // Navigates to /settings/users
-            builder: (context, state) => const UserManagementScreen(),
-          ),
-          GoRoute(
-            path: 'management', // Navigates to /settings/management
-            builder: (context, state) => const FarmManagementScreen(),
-          ),
-        ],
-      ),
-      GoRoute(
         path: '/notifications',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/sales',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const SalesRecordsScreen(),
+      ),
+      GoRoute(
+        path: '/costs',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const CostRecordsScreen(),
+      ),
+      GoRoute(
+        path: '/inventory',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const InventoryScreen(),
+      ),
+      GoRoute(
+        path: '/farm-map',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const FarmMapScreen(),
+      ),
+      GoRoute(
+        path: '/user-management',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const UserManagementScreen(),
+      ),
+      GoRoute(
+        path: '/farm-management',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const FarmManagementScreen(),
       ),
 
       // The main application shell with role-based bottom navigation
@@ -66,12 +84,8 @@ GoRouter createRouter(AuthProvider authProvider) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/my-tasks', // Worker's home
-                builder: (context, state) => const MyTasksScreen(),
-              ),
-              GoRoute(
-                path: '/task-board', // Manager/Owner's home
-                builder: (context, state) => const TaskBoardScreen(),
+                path: '/',
+                builder: (context, state) => const DashboardScreen(),
               ),
             ],
           ),
@@ -83,21 +97,14 @@ GoRouter createRouter(AuthProvider authProvider) {
                 path: '/pigs',
                 builder: (context, state) => const PigsListScreen(),
                 routes: [
-                  // This is a sub-route, it will show on top of the pigs list
                   GoRoute(
-                    path: ':pigId', // e.g., /pigs/PIG123
+                    path: ':pigId', // e.g. /pigs/PIG123
                     builder:
-                        (context, state) => PigProfileScreen(
+                        (context, state) => PigDetailScreen(
                           pigId: state.pathParameters['pigId']!,
                         ),
                   ),
                 ],
-              ),
-              GoRoute(
-                path: '/scan', // Worker's scan page
-                builder:
-                    (context, state) =>
-                        const ScanScreen(), // Create a placeholder ScanScreen
               ),
             ],
           ),
@@ -106,8 +113,8 @@ GoRouter createRouter(AuthProvider authProvider) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/reports',
-                builder: (context, state) => const ReportsScreen(),
+                path: '/tasks',
+                builder: (context, state) => const TaskBoardScreen(),
               ),
             ],
           ),
@@ -116,8 +123,8 @@ GoRouter createRouter(AuthProvider authProvider) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/farm-map',
-                builder: (context, state) => const FarmMapScreen(),
+                path: '/menu',
+                builder: (context, state) => const MenuScreen(),
               ),
             ],
           ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:pig_lifecycle_crm/features/auth/providers/auth_provider.dart';
+import 'package:pig_lifecycle_crm/features/auth/presentation/providers/auth_provider.dart';
 
 class ScaffoldWithNavBar extends StatelessWidget {
   const ScaffoldWithNavBar({required this.navigationShell, super.key});
@@ -29,19 +29,16 @@ class ScaffoldWithNavBar extends StatelessWidget {
 
     // Define navigation items for different roles
     final managerItems = [
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.task_alt),
-        label: 'Task Board',
+      BottomNavigationBarItem(
+        icon: Icon(Icons.dashboard_outlined),
+        label: 'Dashboard',
       ),
-      const BottomNavigationBarItem(icon: Icon(Icons.pets), label: 'Pigs'),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.map_outlined),
-        label: 'Farm Map',
+      BottomNavigationBarItem(icon: Icon(Icons.pets_outlined), label: 'Pigs'),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.task_alt_outlined),
+        label: 'Tasks',
       ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.bar_chart),
-        label: 'Reports',
-      ),
+      BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'Menu'),
     ];
 
     final workerItems = [

@@ -36,11 +36,6 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
           onPressed: () => context.push('/notifications'),
         ),
-        IconButton(
-          icon: const Icon(Icons.settings_outlined, color: Colors.black),
-          onPressed: () => context.push('/settings'),
-        ),
-        const SizedBox(width: 8),
       ],
       // This will now work without an error
       bottom: bottom,
