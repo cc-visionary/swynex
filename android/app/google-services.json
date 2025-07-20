@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "232493173990",
+    "project_id": "swynex",
+    "storage_bucket": "swynex.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:232493173990:android:1a2ce2448457a4d5217f27",
+        "android_client_info": {
+          "package_name": "com.example.pig_lifecycle_crm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADiS4CmPM6hcOQ54GkEIXNGdr-35o7094"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
