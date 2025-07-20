@@ -34,7 +34,6 @@ class _MyAppState extends State<MyApp> {
 
     return MaterialApp.router(
       title: 'Pig Lifecycle CRM',
-      // --- APPLY THE THEME HERE ---
       theme: AppTheme.lightTheme,
       routerConfig: createRouter(authProvider),
     );

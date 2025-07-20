@@ -14,6 +14,7 @@ class PigsViewModel with ChangeNotifier {
   final _pigsSubject = BehaviorSubject<List<Pig>>.seeded([]);
   final _batchesSubject = BehaviorSubject<List<PigBatch>>.seeded([]);
   final _locationsSubject = BehaviorSubject<List<FarmLocation>>.seeded([]);
+  StreamSubscription? _dataSubscription;
 
   // --- 2. State: Private variables to hold the current UI state ---
   final Set<String> _selectedPigIds = {};
@@ -26,20 +27,15 @@ class PigsViewModel with ChangeNotifier {
 
   // --- 3. Public Getters: The UI builds from these ---
 
+  List<PigBatch> get allBatches => _batchesSubject.value;
+
   // Filtered lists are calculated on-the-fly from the latest data
   List<PigBatch> get filteredBatches {
-    final visiblePigIds = filteredPigs.map((p) => p.id).toSet();
-    if (visiblePigIds.isEmpty &&
-        (_selectedPenIds.isNotEmpty ||
-            _selectedRoomIds.isNotEmpty ||
-            _selectedBuildingIds.isNotEmpty)) {
-      return [];
-    }
-    return _batchesSubject.value.where((batch) {
-      return _pigsSubject.value.any(
-        (pig) => pig.batchId == batch.id && visiblePigIds.contains(pig.id),
-      );
-    }).toList();
+    final visibleBatchIds =
+        filteredPigs.map((p) => p.batchId).where((id) => id != null).toSet();
+    return _batchesSubject.value
+        .where((batch) => visibleBatchIds.contains(batch.id))
+        .toList();
   }
 
   List<Pig> get filteredPigs {
@@ -118,23 +114,35 @@ class PigsViewModel with ChangeNotifier {
   PigViewMode get viewMode => _viewMode;
 
   Map<String, Set<String>> get appliedFilters => {
-        'buildingIds': _selectedBuildingIds,
-        'roomIds': _selectedRoomIds,
-        'penIds': _selectedPenIds,
-        'genders': _selectedGenders,
-        'breeds': _selectedBreeds,
-      };
+    'buildingIds': _selectedBuildingIds,
+    'roomIds': _selectedRoomIds,
+    'penIds': _selectedPenIds,
+    'genders': _selectedGenders,
+    'breeds': _selectedBreeds,
+  };
 
   // --- 4. Constructor: Initialize the data flow ---
   PigsViewModel(String farmId) {
     _firestoreService.getPigsStream(farmId).pipe(_pigsSubject);
     _firestoreService.getBatchesStream(farmId).pipe(_batchesSubject);
     _firestoreService.getLocationsStream().pipe(_locationsSubject);
+
+    // Listen to the combined stream of all subjects
+    _dataSubscription = Rx.combineLatest3(
+      _pigsSubject,
+      _batchesSubject,
+      _locationsSubject,
+      (pigs, batches, locations) => null, // We just need a signal
+    ).listen((_) {
+      // When any of the source streams emit, this will fire.
+      notifyListeners();
+    });
   }
 
   // --- 5. Dispose: Crucial for preventing memory leaks ---
   @override
   void dispose() {
+    _dataSubscription?.cancel();
     _pigsSubject.close();
     _batchesSubject.close();
     _locationsSubject.close();
@@ -273,7 +281,19 @@ class PigsViewModel with ChangeNotifier {
   }
 
   List<Pig> get allPigs => _pigsSubject.value;
-  Future<void> addPig(Pig pig) => _firestoreService.addPig(pig);
+  Future<void> addPig(Pig pig) async {
+    final dateForName = DateFormat('yyyy-MM-dd').format(pig.birthDate);
+    final newBatchData = PigBatch(
+      batchName: 'Single Pig - ${pig.farmTagId} - $dateForName',
+      creationDate: pig.birthDate,
+      notes: 'Added as a single pig.',
+    );
+    await _firestoreService.addPigsAndCreateBatch(
+      batchData: newBatchData,
+      pigsInBatch: [pig],
+    );
+  }
+
   Future<void> updatePig(Pig pig) => _firestoreService.updatePig(pig);
   Future<void> deleteSelectedPigs() async {
     await _firestoreService.deletePigs(_selectedPigIds.toList());

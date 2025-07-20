@@ -230,30 +230,6 @@ class FirestoreService {
     return batch.commit();
   }
 
-  Future<void> addPig(Pig pig) {
-    // 1. Create a reference to a new document with an auto-generated ID.
-    final docRef = _db.collection('pigs').doc();
-
-    // 2. Create a new Pig instance that includes the new ID.
-    //    This ensures the document in Firestore contains its own ID.
-    final pigWithId = Pig(
-      id: docRef.id,
-      farmTagId: pig.farmTagId,
-      gender: pig.gender,
-      breed: pig.breed,
-      birthDate: pig.birthDate,
-      damId: pig.damId,
-      sireId: pig.sireId,
-      batchId: pig.batchId,
-      currentPenId: pig.currentPenId,
-      status: pig.status,
-      cullingReason: pig.cullingReason,
-    );
-
-    // 3. Set the data for the new document.
-    return docRef.set(pigWithId.toJson());
-  }
-
   Future<void> updatePig(Pig pig) {
     return _db.collection('pigs').doc(pig.id).update(pig.toJson());
   }

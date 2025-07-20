@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -12,8 +11,9 @@ class PigBatchView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<PigsViewModel>();
-    final batches = viewModel.filteredBatches;
+    final batches = viewModel.allBatches;
     final allPigs = viewModel.filteredPigs;
+    print(batches.length.toString() + " | " + allPigs.length.toString());
 
     if (batches.isEmpty) {
       return const Center(child: Text('No batches found.'));

@@ -8,9 +8,9 @@ import 'package:pig_lifecycle_crm/features/auth/providers/auth_provider.dart';
 // You will need to create these files as simple placeholders for now
 import 'package:pig_lifecycle_crm/features/dashboard/screens/my_tasks_screen.dart';
 import 'package:pig_lifecycle_crm/features/dashboard/screens/task_board_screen.dart';
-import 'package:pig_lifecycle_crm/features/operations/farm_map_screen.dart';
-import 'package:pig_lifecycle_crm/features/operations/scan_screen.dart';
-import 'package:pig_lifecycle_crm/features/operations/reports_screen.dart';
+import 'package:pig_lifecycle_crm/features/operations/screens/farm_map_screen.dart';
+import 'package:pig_lifecycle_crm/features/operations/screens/scan_screen.dart';
+import 'package:pig_lifecycle_crm/features/operations/screens/reports_screen.dart';
 import 'package:pig_lifecycle_crm/features/lifecycle_crm/screens/pigs_list_screen.dart';
 import 'package:pig_lifecycle_crm/features/lifecycle_crm/screens/pig_profile_screen.dart';
 import 'package:pig_lifecycle_crm/features/settings/screens/settings_screen.dart';
@@ -108,6 +108,16 @@ GoRouter createRouter(AuthProvider authProvider) {
               GoRoute(
                 path: '/reports',
                 builder: (context, state) => const ReportsScreen(),
+              ),
+            ],
+          ),
+
+          // BRANCH 3: The fourth tab
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/farm-map',
+                builder: (context, state) => const FarmMapScreen(),
               ),
             ],
           ),

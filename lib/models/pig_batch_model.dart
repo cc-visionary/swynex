@@ -16,8 +16,8 @@ class PigBatch {
   });
 
   Map<String, dynamic> toJson() => {
-    'batch_name': batchName,
-    'creation_date': Timestamp.fromDate(creationDate),
+    'batchName': batchName,
+    'creationDate': Timestamp.fromDate(creationDate),
     'notes': notes,
   };
 
