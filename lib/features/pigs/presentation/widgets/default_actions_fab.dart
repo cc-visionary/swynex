@@ -24,11 +24,11 @@ class DefaultActionsFab extends StatelessWidget {
           label: 'Register Purchase',
           onTap: () => showRegisterPurchaseDialog(context),
         ),
-        SpeedDialChild(
-          child: const Icon(Icons.person_add_alt_1),
-          label: 'Add Single Pig',
-          onTap: () => showAddEditPigDialog(context),
-        ),
+        // SpeedDialChild(
+        //   child: const Icon(Icons.person_add_alt_1),
+        //   label: 'Add Single Pig',
+        //   onTap: () => showAddEditPigDialog(context),
+        // ),
       ],
     );
   }

@@ -40,8 +40,8 @@ class _AddEditPigDialogContentState extends State<_AddEditPigDialogContent> {
   final _breedController = TextEditingController();
 
   DateTime _birthDate = DateTime.now();
-  String _gender = 'Female';
-  String _status = 'Active';
+  String? _gender;
+  String? _status;
   String? _selectedPenId;
   String? _damId;
   String? _sireId;
@@ -76,6 +76,9 @@ class _AddEditPigDialogContentState extends State<_AddEditPigDialogContent> {
     final viewModel = context.watch<PigsViewModel>();
     final theme = Theme.of(context);
 
+    // Get the list of valid genders based on the selected status
+    final validGenders = FarmData.gendersByStatus[_status] ?? [];
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
       child: Form(
@@ -95,33 +98,53 @@ class _AddEditPigDialogContentState extends State<_AddEditPigDialogContent> {
                 validator: (v) => v!.isEmpty ? 'Tag ID is required' : null,
               ),
               const SizedBox(height: 16),
+              // Status dropdown is now first
               DropdownButtonFormField<String>(
                 value: _status,
+                hint: const Text('Status'),
                 items:
-                    FarmData.pigStatuses
+                    FarmData.allStatuses
                         .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                         .toList(),
-                onChanged: (val) => setState(() => _status = val!),
+                onChanged:
+                    (val) => setState(() {
+                      _status = val;
+                      final newValidGenders =
+                          FarmData.gendersByStatus[_status] ?? [];
+                      // Auto-select gender if there's only one valid option
+                      if (newValidGenders.length == 1) {
+                        _gender = newValidGenders.first;
+                      } else {
+                        _gender =
+                            null; // Otherwise, reset it for user selection
+                      }
+                    }),
                 decoration: const InputDecoration(labelText: 'Status'),
+                validator: (v) => v == null ? 'Please select a status' : null,
               ),
               const SizedBox(height: 16),
+              // Gender dropdown is now dynamic and depends on status
               DropdownButtonFormField<String>(
                 value: _gender,
+                hint: const Text('Gender'),
+                disabledHint: const Text('Gender auto-selected'),
                 items:
-                    FarmData.pigGenders
+                    validGenders
                         .map((g) => DropdownMenuItem(value: g, child: Text(g)))
                         .toList(),
-                onChanged: (val) => setState(() => _gender = val!),
+                onChanged:
+                    (_status != null && validGenders.length == 1)
+                        ? null // Disable if auto-selected
+                        : (val) => setState(() => _gender = val!),
                 decoration: const InputDecoration(labelText: 'Gender'),
+                validator: (v) => v == null ? 'Please select a gender' : null,
               ),
               const SizedBox(height: 16),
-              // You can expand this to be a dropdown with FarmData.pigBreeds
               TextFormField(
                 controller: _breedController,
                 decoration: const InputDecoration(labelText: 'Breed'),
               ),
               const SizedBox(height: 16),
-              // Dropdown for selecting the pen
               DropdownButtonFormField<String>(
                 value: _selectedPenId,
                 items:
@@ -149,8 +172,8 @@ class _AddEditPigDialogContentState extends State<_AddEditPigDialogContent> {
                       id: widget.pig?.id,
                       farmTagId: _tagIdController.text,
                       birthDate: _birthDate,
-                      gender: _gender,
-                      status: _status,
+                      gender: _gender!,
+                      status: _status!,
                       breed: _breedController.text,
                       currentPenId: _selectedPenId,
                       damId: _damId,
@@ -160,7 +183,7 @@ class _AddEditPigDialogContentState extends State<_AddEditPigDialogContent> {
                     if (isEditMode) {
                       await viewModel.updatePig(pigToSave);
                     } else {
-                      await viewModel.addPig(pigToSave);
+                      // await viewModel.addPig(pigToSave);
                     }
                     if (mounted) Navigator.of(context).pop();
                   }

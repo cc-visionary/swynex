@@ -7,6 +7,12 @@ import 'package:pig_lifecycle_crm/features/pigs/data/models/pig_model.dart';
 import 'package:pig_lifecycle_crm/features/settings/data/models/farm_location_model.dart';
 import 'package:rxdart/rxdart.dart';
 
+class PenAssignment {
+  final String penId;
+  final int quantity;
+  PenAssignment({required this.penId, required this.quantity});
+}
+
 enum PigViewMode { batch, list }
 
 class PigsViewModel with ChangeNotifier {
@@ -33,9 +39,11 @@ class PigsViewModel with ChangeNotifier {
 
   // Filtered lists are calculated on-the-fly from the latest data
   List<PigBatch> get filteredBatches {
-    final visibleBatchIds =
-        filteredPigs.map((p) => p.batchId).where((id) => id != null).toSet();
-    return _batchesSubject.value
+    // First, get the set of all batch IDs that are present on the currently filtered pigs.
+    final visibleBatchIds = filteredPigs.map((p) => p.batchId).toSet();
+
+    // Then, return only the batch objects that match these IDs.
+    return allBatches
         .where((batch) => visibleBatchIds.contains(batch.id))
         .toList();
   }
@@ -104,14 +112,21 @@ class PigsViewModel with ChangeNotifier {
       _locationsSubject.value.where((l) => l.type == 'pen').toList();
 
   // Getters for synchronous access
-  List<Pig> get sows =>
-      (_pigsSubject.valueOrNull ?? [])
-          .where((p) => p.gender == 'Sow' && p.status == 'Active')
-          .toList();
-  List<Pig> get boars =>
-      (_pigsSubject.valueOrNull ?? [])
-          .where((p) => p.gender == 'Boar' && p.status == 'Active')
-          .toList();
+  List<Pig> get farrowingSows {
+    final allPigs = _pigsSubject.valueOrNull ?? [];
+    // A sow is a female with a status of 'Sow' or 'Gilt'
+    return allPigs.where((p) {
+      return p.gender == 'Female' && (p.status == 'Sow' || p.status == 'Gilt');
+    }).toList();
+  }
+
+  List<Pig> get boars {
+    final allPigs = _pigsSubject.valueOrNull ?? [];
+    return allPigs
+        .where((p) => p.gender == 'Male' && p.status == 'Boar')
+        .toList();
+  }
+
   Set<String> get selectedPigIds => _selectedPigIds;
   PigViewMode get viewMode => _viewMode;
 
@@ -219,16 +234,16 @@ class PigsViewModel with ChangeNotifier {
       (p) => p.id == damId,
       orElse: () => throw Exception('Mother sow not found'),
     );
-    final dateForName = DateFormat('yyyy-MM-dd').format(birthDate);
+    final timestamp = DateFormat('yyMMdd-HHmmss').format(birthDate);
     final newBatchData = PigBatch(
-      batchName: 'Litter from ${motherSow.farmTagId} - $dateForName',
+      batchName: 'Litter from ${motherSow.farmTagId} - $timestamp',
       creationDate: birthDate,
       notes: 'Farrowed from sow ${motherSow.farmTagId}.',
     );
     final List<Pig> newLitter = [];
     for (int i = 1; i <= numberOfPiglets; i++) {
       final tagId =
-          '${motherSow.farmTagId}-${DateFormat('yyMM').format(birthDate)}-${i.toString().padLeft(2, '0')}';
+          '${motherSow.farmTagId}-${timestamp}-${i.toString().padLeft(2, '0')}';
       newLitter.add(
         Pig(
           farmTagId: tagId,
@@ -244,57 +259,71 @@ class PigsViewModel with ChangeNotifier {
     await _firestoreService.addPigsAndCreateBatch(
       batchData: newBatchData,
       pigsInBatch: newLitter,
+      totalCost: 0,
     );
   }
 
   Future<void> addPurchaseBatch({
-    required int numberOfPigs,
+    required List<PenAssignment> assignments,
+    required double totalCost,
     required String gender,
     required String status,
-    required String penId,
     required DateTime purchaseDate,
     String? breed,
   }) async {
-    final dateForName = DateFormat('yyyy-MM-dd').format(purchaseDate);
+    // Calculate total number of pigs from the assignments
+    final totalPigs = assignments.fold<int>(
+      0,
+      (sum, item) => sum + item.quantity,
+    );
+
+    final timestamp = DateFormat('yyMMdd-HHmmss').format(purchaseDate);
     final newBatchData = PigBatch(
-      batchName: 'Purchase - $dateForName',
+      batchName: 'Purchase - $timestamp',
       creationDate: purchaseDate,
-      notes: '$numberOfPigs pigs purchased.',
+      notes: '$totalPigs pigs purchased.',
     );
     final List<Pig> newPurchase = [];
-    for (int i = 1; i <= numberOfPigs; i++) {
-      final tagId =
-          'PUR-${DateFormat('yyMMdd').format(purchaseDate)}-${i.toString().padLeft(3, '0')}';
-      newPurchase.add(
-        Pig(
-          farmTagId: tagId,
-          gender: gender,
-          status: status,
-          breed: breed,
-          birthDate: purchaseDate,
-          currentPenId: penId,
-        ),
-      );
+    int pigCounter = 0; // To ensure unique tag IDs across all assignments
+
+    // --- Loop through each assignment to create pigs ---
+    for (final assignment in assignments) {
+      for (int i = 1; i <= assignment.quantity; i++) {
+        pigCounter++;
+        final tagId =
+            'PUR-${DateFormat('yyMMdd').format(purchaseDate)}-${pigCounter.toString().padLeft(3, '0')}';
+        newPurchase.add(
+          Pig(
+            farmTagId: tagId,
+            gender: gender,
+            status: status,
+            breed: breed,
+            birthDate: purchaseDate,
+            currentPenId: assignment.penId, // <-- Assign to the correct pen
+          ),
+        );
+      }
     }
     await _firestoreService.addPigsAndCreateBatch(
       batchData: newBatchData,
       pigsInBatch: newPurchase,
+      totalCost: totalCost,
     );
   }
 
   List<Pig> get allPigs => _pigsSubject.value;
-  Future<void> addPig(Pig pig) async {
-    final dateForName = DateFormat('yyyy-MM-dd').format(pig.birthDate);
-    final newBatchData = PigBatch(
-      batchName: 'Single Pig - ${pig.farmTagId} - $dateForName',
-      creationDate: pig.birthDate,
-      notes: 'Added as a single pig.',
-    );
-    await _firestoreService.addPigsAndCreateBatch(
-      batchData: newBatchData,
-      pigsInBatch: [pig],
-    );
-  }
+  // Future<void> addPig(Pig pig) async {
+  //   final dateForName = DateFormat('yyyy-MM-dd').format(pig.birthDate);
+  //   final newBatchData = PigBatch(
+  //     batchName: 'Single Pig - ${pig.farmTagId} - $dateForName',
+  //     creationDate: pig.birthDate,
+  //     notes: 'Added as a single pig.',
+  //   );
+  //   await _firestoreService.addPigsAndCreateBatch(
+  //     batchData: newBatchData,
+  //     pigsInBatch: [pig],
+  //   );
+  // }
 
   Future<void> updatePig(Pig pig) => _firestoreService.updatePig(pig);
   Future<void> deleteSelectedPigs() async {

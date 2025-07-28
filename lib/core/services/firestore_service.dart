@@ -10,8 +10,8 @@ import 'package:pig_lifecycle_crm/features/tasks/data/models/farm_task_model.dar
 import 'package:pig_lifecycle_crm/features/health/data/models/health_log_model.dart';
 import 'package:pig_lifecycle_crm/features/pigs/data/models/weight_record_model.dart';
 import 'package:pig_lifecycle_crm/features/operations/data/models/inventory_item_model.dart';
-import 'package:pig_lifecycle_crm/features/reports/data/models/cost_record_model.dart';
-import 'package:pig_lifecycle_crm/features/reports/data/models/sales_record_model.dart';
+import 'package:pig_lifecycle_crm/features/financials/data/models/cost_record_model.dart';
+import 'package:pig_lifecycle_crm/features/financials/data/models/sales_record_model.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -61,16 +61,21 @@ class FirestoreService {
       _deleteDocument(path: 'sales_records/$id');
 
   // --- Cost Records ---
-  Stream<List<CostRecord>> getCosts() => _getCollectionStream(
-    path: 'cost_records',
-    fromSnapshot: CostRecord.fromSnapshot,
-  );
-  Future<void> addCost(CostRecord cost) =>
-      _addDocument(path: 'cost_records', data: cost.toJson());
-  Future<void> updateCost(CostRecord cost) =>
-      _updateDocument(path: 'cost_records/${cost.id}', data: cost.toJson());
-  Future<void> deleteCost(String id) =>
-      _deleteDocument(path: 'cost_records/$id');
+  Stream<List<CostRecord>> getCostRecordsStream(String farmId) {
+    return _db
+        .collection('cost_records')
+        // .where('farmId', isEqualTo: farmId) // For future multi-farm
+        .orderBy('transaction_date', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => CostRecord.fromSnapshot(doc)).toList(),
+        );
+  }
+
+  Future<void> addCostRecord(CostRecord costRecord) {
+    return _db.collection('cost_records').add(costRecord.toJson());
+  }
 
   // --- Inventory Items ---
   Stream<List<InventoryItem>> getInventoryItems() => _getCollectionStream(
@@ -188,6 +193,7 @@ class FirestoreService {
     return _db
         .collection('pigs')
         // .where('farmId', isEqualTo: farmId) // When you implement multi-farm
+        .orderBy('farm_tag_id')
         .snapshots()
         .map(
           (snapshot) =>
@@ -212,6 +218,7 @@ class FirestoreService {
   Future<void> addPigsAndCreateBatch({
     required PigBatch batchData,
     required List<Pig> pigsInBatch,
+    required double totalCost,
     String? farmId,
   }) async {
     final batch = _db.batch();
@@ -245,6 +252,18 @@ class FirestoreService {
       );
       batch.set(pigRef, newPig.toJson());
     }
+
+    // 3. Automatically create a corresponding CostRecord ---
+    final costRef = _db.collection('cost_records').doc();
+    final costRecord = CostRecord(
+      batchId: batchRef.id,
+      costCategory: 'Livestock Purchase',
+      amount: totalCost,
+      transactionDate: batchData.creationDate,
+      description:
+          'Purchase of ${pigsInBatch.length} pigs for batch: ${batchData.batchName}',
+    );
+    batch.set(costRef, costRecord.toJson());
 
     // 4. Commit all operations at once.
     return batch.commit();
@@ -351,6 +370,7 @@ class FirestoreService {
   Stream<List<FarmLocation>> getLocationsStream() {
     return _db
         .collection('farm_locations')
+        .orderBy('name')
         .snapshots()
         .map(
           (snapshot) =>

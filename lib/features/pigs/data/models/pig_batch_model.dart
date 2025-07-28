@@ -25,8 +25,8 @@ class PigBatch {
     final data = doc.data()!;
     return PigBatch(
       id: doc.id,
-      batchName: data['batch_name'],
-      creationDate: (data['creation_date'] as Timestamp).toDate(),
+      batchName: data['batchName'],
+      creationDate: (data['creationDate'] as Timestamp).toDate(),
       notes: data['notes'],
     );
   }

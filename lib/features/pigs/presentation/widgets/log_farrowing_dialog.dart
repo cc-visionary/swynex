@@ -82,8 +82,10 @@ class _LogFarrowingDialogContentState
             const SizedBox(height: 24),
             DropdownButtonFormField<String>(
               value: _selectedSowId,
+              hint: const Text('Select Mother Sow'),
+              // Use the new, more accurate list of sows
               items:
-                  viewModel.sows
+                  viewModel.farrowingSows
                       .map(
                         (sow) => DropdownMenuItem(
                           value: sow.id,
@@ -114,11 +116,24 @@ class _LogFarrowingDialogContentState
                 labelText: 'Number of Live Piglets',
               ),
               keyboardType: TextInputType.number,
-              validator: (v) => v!.isEmpty ? 'Please enter a count' : null,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter a count';
+                }
+                final count = int.tryParse(value);
+                if (count == null) {
+                  return 'Please enter a valid number';
+                }
+                if (count <= 0) {
+                  return 'Please enter a number greater than zero';
+                }
+                return null; // Return null if the input is valid
+              },
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _selectedBoarId,
+              hint: const Text('Select Sire (Optional)'),
               items:
                   viewModel.boars
                       .map(
